@@ -27,7 +27,7 @@ crawler_settings = Settings()
 crawler_settings.setmodule(my_settings)
 spider_timeout = 60
 
-wechat_bot = Bot()
+wechat_bot = Bot(console_qr=True)
 wechat_friend = wechat_bot.friends().search('Zac ZHOU')[0]
 # feh_group = wechat_bot.groups().search(u'测试')[0]
 feh_group = wechat_bot.groups().search(u'维罗妮卡与庆祝十九大胜利闭幕')[0]
@@ -69,7 +69,7 @@ def update_who_is_behind(score_change_list):
         initial_update = who_is_behind == ''
         who_is_behind = ' '.join(score_change_list) + ' 劣势啦！'
         if initial_update is not True:
-            wechat_friend.send(who_is_behind)
+            # wechat_friend.send(who_is_behind)
             feh_group.send(who_is_behind)
 
 # Very messy spider, need to refactor in the future
