@@ -10,6 +10,7 @@ from twisted.internet import reactor
 from twisted.internet import task
 from wxpy import *
 import json
+import sched, time, logging, requests
 
 Chinese_name_dict = {
 	'Takumi': '拓海',
@@ -28,6 +29,7 @@ crawler_settings.setmodule(my_settings)
 spider_timeout = 60
 
 wechat_bot = Bot(console_qr=True)
+# wechat_friend = wechat_bot.friends().search(u'直援会特约FEH投票战小助手')[0]
 wechat_friend = wechat_bot.friends().search('Zac ZHOU')[0]
 # feh_group = wechat_bot.groups().search(u'测试')[0]
 feh_group = wechat_bot.groups().search(u'维罗妮卡与庆祝十九大胜利闭幕')[0]
@@ -43,6 +45,9 @@ def auto_reply(msg):
             return who_is_behind
         elif "直援会" in msg.text:
             return "小直姐姐最棒啦！快加入直援会和我们一起感受小直姐姐学霸光辉的洗礼吧~"
+        elif "iPhone" in msg.text or "ipx" in msg.text or "手机" in msg.text:
+            print last_available_sentence
+            return last_available_sentence
         else:
             return "不能理解你说的话嘤嘤嘤 请你找开发者@Zac ZHOU 哦对了现在版本还不支持艾特人"
 
@@ -72,8 +77,38 @@ def update_who_is_behind(score_change_list):
             # wechat_friend.send(who_is_behind)
             feh_group.send(who_is_behind)
 
+# Here is for check ipx
+colorToPartNumber = {'white': 'MQAG2B/A', 'black': 'MQAF2B/A'}
+yourAddress = 'WC1E 6BT'
+last_available_sentence = ''
+
+def getAddressForURL():
+	return yourAddress.replace(' ', '%20')
+
+def checkPickupInStoreList(storeList, color):
+    global last_available_sentence
+    last_available_sentence = ''
+    for store in storeList:
+        pickupSituationForStores = store['partsAvailability'][colorToPartNumber[color]]['storePickupQuote']
+        last_available_sentence = ' '.join([last_available_sentence, '\n', time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime()), 'iPhone 256G with color', color, pickupSituationForStores])
+        pickupSituationAbbreviation = store['partsAvailability'][colorToPartNumber[color]]['pickupSearchQuote']
+        if (pickupSituationAbbreviation != 'Currently unavailable'):
+            notifyMessage = str(' '.join(['Iphone X with color', color, pickupSituationForStores]))
+            wechat_friend.send(notifyMessage)
+    print last_available_sentence
+
+def scheduleIpxCheck():
+	requestURLforWhite = ''.join(['https://www.apple.com/uk/shop/retail/pickup-message?pl=true&parts.0=', colorToPartNumber['white'], '&location=', getAddressForURL()])
+	requestURLforBlack = ''.join(['https://www.apple.com/uk/shop/retail/pickup-message?pl=true&parts.0=', colorToPartNumber['black'], '&location=', getAddressForURL()])
+	storeListforWhite = requests.get(requestURLforWhite).json()['body']['stores']
+	storeListforBlack = requests.get(requestURLforBlack).json()['body']['stores']
+	checkPickupInStoreList(storeListforWhite, 'white')
+	checkPickupInStoreList(storeListforBlack, 'black')
+	print '==================================================================================================='
+
 # Very messy spider, need to refactor in the future
 def run_spider():
+    scheduleIpxCheck()
     update_who_is_behind(score_changes(read_scores_json()))
     loop_call.stop()
     runner = CrawlerRunner(crawler_settings)
