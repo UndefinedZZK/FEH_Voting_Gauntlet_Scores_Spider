@@ -3,7 +3,7 @@ import scrapy
 class FehVotingGauntletScoresSpider(scrapy.Spider):
     name = "feh_voting_gauntlet_scores"
     start_urls = [
-        'https://support.fire-emblem-heroes.com/voting_gauntlet/tournaments/8',
+        'https://support.fire-emblem-heroes.com/voting_gauntlet/tournaments/9',
     ]
 
     def parse(self, response):
